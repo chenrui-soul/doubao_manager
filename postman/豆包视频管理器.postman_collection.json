@@ -1,0 +1,77 @@
+{
+  "info": {
+    "name": "豆包视频管理器 API",
+    "description": "本地豆包视频生成服务。先启动桌面程序并完成账号登录。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://127.0.0.1:8787"},
+    {"key": "requestId", "value": ""},
+    {"key": "accountId", "value": "account-002"}
+  ],
+  "item": [
+    {
+      "name": "服务",
+      "item": [
+        {"name": "健康检查", "request": {"method": "GET", "url": "{{baseUrl}}/health"}},
+        {"name": "账号列表", "request": {"method": "GET", "url": "{{baseUrl}}/api/v1/accounts"}}
+      ]
+    },
+    {
+      "name": "视频任务",
+      "item": [
+        {
+          "name": "生成视频（网络图片 form-data）",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "prompt", "value": "让图1和图2中的人物在图3的海边一起跳舞，镜头平稳推进", "type": "text"},
+                {"key": "model", "value": "Seedance 2.0 Mini", "type": "text"},
+                {"key": "ratio", "value": "9:16", "type": "text"},
+                {"key": "resolution", "value": "720p", "type": "text"},
+                {"key": "duration", "value": "10", "type": "text"},
+                {"key": "timeoutMs", "value": "120000", "type": "text"},
+                {"key": "files", "value": "https://example.com/person-1.jpg", "type": "text"},
+                {"key": "files", "value": "https://example.com/person-2.jpg", "type": "text"},
+                {"key": "files", "value": "https://example.com/beach.jpg", "type": "text"}
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/video/generate"
+          }
+        },
+        {"name": "查询任务", "request": {"method": "GET", "url": "{{baseUrl}}/api/v1/video/jobs/{{requestId}}"}},
+        {"name": "恢复任务", "request": {"method": "POST", "url": "{{baseUrl}}/api/v1/video/jobs/{{requestId}}/resume"}},
+        {"name": "刷新视频地址", "request": {"method": "POST", "url": "{{baseUrl}}/api/v1/video/jobs/{{requestId}}/refresh-url"}}
+      ]
+    },
+    {
+      "name": "账号管理",
+      "item": [
+        {"name": "打开登录窗口", "request": {"method": "POST", "url": "{{baseUrl}}/api/v1/accounts/{{accountId}}/login"}},
+        {"name": "检查登录状态", "request": {"method": "POST", "url": "{{baseUrl}}/api/v1/accounts/{{accountId}}/check-login"}},
+        {
+          "name": "新增账号",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"豆包账号 005\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{baseUrl}}/api/v1/accounts"
+          }
+        },
+        {
+          "name": "重命名账号",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"豆包账号 002\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": "{{baseUrl}}/api/v1/accounts/{{accountId}}"
+          }
+        },
+        {"name": "删除账号", "request": {"method": "DELETE", "url": "{{baseUrl}}/api/v1/accounts/{{accountId}}"}}
+      ]
+    }
+  ]
+}

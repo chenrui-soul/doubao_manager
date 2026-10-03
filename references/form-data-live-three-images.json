@@ -1,0 +1,13 @@
+{
+  "prompt": "让图1和图2中的人物在图3的海边场景中一起跳舞，保持人物身份和场景关系，镜头平稳推进",
+  "model": "Seedance 2.0 Mini",
+  "ratio": "9:16",
+  "duration": 10,
+  "timeoutMs": 120000,
+  "urls": [
+    "https://s3.nexusapi.center/lingzhenai/bf4f0a64-d604-413d-a896-367f26a5aa67/9741400e-129f-44ff-9589-4400186e8ddf/references/23ac182d-2a0a-430b-9b54-31fca3aff77d.jpg",
+    "https://s3.nexusapi.center/lingzhenai/bf4f0a64-d604-413d-a896-367f26a5aa67/9741400e-129f-44ff-9589-4400186e8ddf/references/d0a30500-2742-4eae-8aa0-95ee852d5141.png",
+    "https://s3.nexusapi.center/lingzhenai/bf4f0a64-d604-413d-a896-367f26a5aa67/9741400e-129f-44ff-9589-4400186e8ddf/references/2d860823-92db-4e02-8dfa-438db9e5081f.jpg"
+  ],
+  "attempts": 3
+}

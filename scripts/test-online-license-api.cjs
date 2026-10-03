@@ -1,0 +1,56 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const os = require("node:os");
+const {spawn} = require("node:child_process");
+const readline = require("node:readline");
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), "doubao-license-api-"));
+process.env.DOUBAO_DATA_ROOT = dir;
+process.env.DOUBAO_ACCOUNTS_FILE = path.join(dir, "accounts.json");
+fs.writeFileSync(process.env.DOUBAO_ACCOUNTS_FILE, JSON.stringify({accounts: [{id: "account-001", loginState: "logged_in"}]}));
+const license = require("../src/license.cjs");
+let valid = true;
+const manager = new license.OnlineLicense({file: path.join(dir, "license.json"), device: () => "DB-TEST", vault: async value => value, fetcher: async () => ({ok: true, json: async () => ({success: true, data: {valid, status: valid ? "active" : "revoked"}})})});
+license.checkLicense = opts => manager.check(opts);
+license.activateLicense = key => manager.activate(key);
+license.requireLicense = async opts => { const state = await manager.check(opts); if (!state.valid) throw Object.assign(new Error(state.message), {code: state.code, statusCode: 403}); return state; };
+let submissions = 0;
+globalThis.__doubaoInProcessWorker = {setProgressHandler() {}, detect: async () => ({loggedIn: true}), open: async () => ({}), generate: async () => { submissions++; return {ok: true, state: "completed", videoVid: "fixture-vid", watermarkedUrl: "mock://video"}; }, close() {}};
+const service = require("../src/server.cjs");
+delete globalThis.__doubaoInProcessWorker;
+let mcp;
+(async () => {
+  await new Promise(resolve => service.server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${service.server.address().port}`;
+  const post = (route, body, extra = {}) => fetch(base + route, {method: "POST", headers: {"content-type": "application/json", ...extra}, body: JSON.stringify(body)});
+  try {
+    assert.equal((await fetch(base + "/health")).status, 200);
+    const status = await (await fetch(base + "/api/v1/license/status")).json();
+    assert.equal(status.deviceCode, "DB-TEST"); assert.equal(status.valid, false);
+    for (const route of ["/api/v1/accounts", "/api/v1/video/jobs"]) assert.equal((await fetch(base + route)).status, 403);
+    for (const route of ["/api/v1/video/generate", "/api/v1/accounts/account-001/login", "/api/v1/video/jobs/missing/resume"]) assert.equal((await post(route, {prompt: "test"})).status, 403);
+    assert.equal((await post("/api/v1/license/activate", {secret: "test"}, {origin: "https://untrusted.example"})).status, 403);
+    assert.equal((await post("/api/v1/license/activate", {payload: "old-offline-key", signature: "test"})).status, 400);
+    assert.equal((await post("/api/v1/license/activate", {secret: "test"})).status, 200);
+    const activeStatus = await (await fetch(base + "/api/v1/license/status")).json();
+    assert.equal(activeStatus.permanent, true); assert.equal(activeStatus.expiresAt, null);
+    const generated = await post("/api/v1/video/generate?wait=1&waitTimeoutMs=3000", {prompt: "fixture only", preferredAccountId: "account-001", accountLockRequired: true});
+    assert.equal(generated.status, 200); assert.equal((await generated.json()).state, "completed");
+    assert.equal(submissions, 1);
+    valid = false; await manager.check({force: true});
+    assert.equal((await post("/api/v1/video/generate", {prompt: "blocked"})).status, 403);
+    const tasks = new (require("../src/task-store.cjs").TaskStore)(path.join(dir, "jobs.json"));
+    const recovered = tasks.create("recovered-fixture", {prompt: "must not submit"});
+    await assert.rejects(service.executeJob(recovered), {code: "DOUBAO_LICENSE_REJECTED"});
+    assert.equal(submissions, 1, "queued/recovered work must not bypass licensing");
+    mcp = spawn(process.execPath, [path.join(__dirname, "../src/mcp-server.cjs")], {env: {...process.env, DOUBAO_API_URL: base}, stdio: ["pipe", "pipe", "pipe"]});
+    const reply = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("MCP response timeout")), 5000);
+      readline.createInterface({input: mcp.stdout}).once("line", line => { clearTimeout(timer); resolve(JSON.parse(line)); });
+    });
+    mcp.stdin.write(JSON.stringify({jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "doubao_generate_video", arguments: {prompt: "blocked fixture"}}}) + "\n");
+    assert.equal((await reply).result.isError, true); assert.equal(submissions, 1);
+    console.log("License API integration: activate -> generate -> revoke -> HTTP/MCP/queue blocked passed (mock video worker)");
+  } finally { mcp?.kill(); await new Promise(resolve => service.server.close(resolve)); }
+})().catch(error => { console.error(error); process.exitCode = 1; service.server.close(); mcp?.kill(); });

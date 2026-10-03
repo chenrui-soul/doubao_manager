@@ -1,0 +1,6 @@
+{
+  "rounds": 3,
+  "prompt": "稳定性回归测试：生成一段海边人物转身视频",
+  "expectedState": "completed",
+  "expectedWatermarkedPrefix": "mock://video/"
+}

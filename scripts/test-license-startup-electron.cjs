@@ -1,0 +1,50 @@
+"use strict";
+// Isolated Chromium check of the shipped HTML/CSS/scripts; no real key or API.
+const {app, BrowserWindow} = require("electron");
+const assert = require("node:assert/strict");
+const path = require("node:path");
+const fs = require("node:fs");
+const os = require("node:os");
+app.setPath("userData", fs.mkdtempSync(path.join(os.tmpdir(), "doubao-startup-ui-")));
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch("in-process-gpu");
+app.commandLine.appendSwitch("disable-gpu-sandbox");
+app.commandLine.appendSwitch("no-sandbox");
+let win;
+app.whenReady().then(async () => {
+  console.log("Starting isolated Electron UI");
+  const preload = path.join(app.getPath("userData"), "fixture-preload.cjs");
+  fs.writeFileSync(preload, `
+    window.testState = {valid:false,code:'DOUBAO_LICENSE_SERVICE_UNAVAILABLE',message:'服务正在启动'};
+    window.testRequests = 0; window.testRoutes = [];
+    window.doubaoDesktop = {licenseStatus:async()=>window.testState, licenseSecret:async()=>'fixture-only', showLicense:async()=>{}};
+    window.fetch=async(url)=>{window.testRoutes.push(new URL(url).pathname);window.testRequests++;return {ok:true,json:async()=>({accounts:[],jobs:[]})}};
+    window.setInterval=(fn,ms)=>{if(ms===5000)window.testTick=fn;return 1};
+  `, "utf8");
+  win = new BrowserWindow({show: false, width: 1200, height: 800, webPreferences: {preload, sandbox: false, contextIsolation: false, nodeIntegration: false, backgroundThrottling: false}});
+  const page = win.webContents;
+  await win.loadFile(path.join(__dirname, "../desktop/index.html"));
+  console.log("Loaded production HTML");
+  const inspect = () => page.executeJavaScript(`({loading:getComputedStyle(document.querySelector('#startupScreen')).display!=='none',workbench:getComputedStyle(document.querySelector('.app-shell')).display!=='none',inert:document.querySelector('.app-shell').inert,dialog:document.querySelector('#licenseDialog').open,modal:document.querySelector('#licenseDialog').matches(':modal'),requests:window.testRequests})`);
+  const change = async state => {
+    await page.executeJavaScript(`window.testState=${JSON.stringify(state)};window.testTick();`);
+    await page.executeJavaScript("new Promise(resolve=>setTimeout(resolve,50))");
+    return inspect();
+  };
+  let view = await inspect();
+  assert.deepEqual(view, {loading:true,workbench:false,inert:true,dialog:false,modal:false,requests:0});
+  view = await change({valid:true,permanent:true});
+  assert.equal(view.workbench,true); assert.equal(view.loading,false); assert.equal(view.dialog,false); assert.equal(view.requests,3); assert.deepEqual((await page.executeJavaScript("window.testRoutes")).sort(), ["/api/v1/accounts","/api/v1/video/jobs","/health"]);
+  await page.executeJavaScript("document.querySelector('#openLicense').click()");
+  view = await inspect(); assert.equal(view.modal,true);
+  await page.executeJavaScript("document.querySelector('#closeLicense').click()");
+  view = await change({valid:false,code:'DOUBAO_LICENSE_EXPIRED',message:'授权已到期'});
+  assert.equal(view.workbench,false); assert.equal(view.dialog,true); assert.equal(view.modal,false);
+  await page.executeJavaScript("document.querySelector('#licenseSecret').value=''");
+  view = await change({valid:false,code:'DOUBAO_LICENSE_UNAVAILABLE',message:'无法连接密钥中心'});
+  assert.equal(view.loading,true); assert.equal(view.dialog,false); assert.equal(view.workbench,false);
+  view = await change({valid:true,permanent:true});
+  assert.equal(view.workbench,true); assert.equal(view.dialog,false);
+  console.log("Electron startup UI passed: computed visibility, no premature API calls, activation page, manual dialog, offline recovery");
+  app.exit(0);
+}).catch(error => { console.error(error); app.exit(1); });

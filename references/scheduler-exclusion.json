@@ -1,0 +1,6 @@
+{
+  "accountCount": 2,
+  "excluded": ["account-001", "account-002"],
+  "timeoutMs": 250,
+  "expectedCode": "DOUBAO_ACCOUNTS_BUSY"
+}

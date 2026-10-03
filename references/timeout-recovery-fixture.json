@@ -1,0 +1,7 @@
+{
+  "jobId": "req_timeout_fixture",
+  "accountId": "account-001",
+  "conversationId": "38440146734427138",
+  "recoveryDelayMs": 5000,
+  "maxAttempts": 4
+}

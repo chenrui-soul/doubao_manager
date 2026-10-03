@@ -1,0 +1,41 @@
+{
+  "timeCases": [
+    {
+      "now": "2026-09-02T15:59:30.000Z",
+      "expected": "2026-09-02T16:00:00.000Z"
+    },
+    {
+      "now": "2026-09-02T16:00:00.000Z",
+      "expected": "2026-09-03T16:00:00.000Z"
+    }
+  ],
+  "trustedQuotaSignals": [
+    {"code": "DOUBAO_VIDEO_QUOTA_EXHAUSTED"},
+    {"quotaExhausted": true}
+  ],
+  "untrustedPlainMessages": [
+    "今日视频生成免费次数用完了",
+    "当前视频额度不足",
+    "生成额度已达到上限",
+    "网络异常，请稍后重试",
+    "本次未扣除额度"
+  ],
+  "scopedDetectionCases": [
+    {
+      "name": "visible quota dialog",
+      "trustedTexts": ["今日视频生成免费次数用完了"],
+      "expected": "今日视频生成免费次数用完"
+    },
+    {
+      "name": "normal confirmation is not exhaustion",
+      "trustedTexts": ["生成后，将消耗每日免费额度"],
+      "expected": ""
+    },
+    {
+      "name": "stale sidebar text is excluded by caller",
+      "trustedTexts": [],
+      "untrustedPageText": "历史会话：当前视频额度不足",
+      "expected": ""
+    }
+  ]
+}

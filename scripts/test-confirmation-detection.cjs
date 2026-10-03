@@ -1,0 +1,14 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const fixture = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "references", "confirmation-detection.json"), "utf8"));
+const {shouldRequestGenerationConfirmation, classifySubmissionEvidence, normalizeComparableText} = require("../src/vendor/browser-controller.cjs");
+assert.equal(shouldRequestGenerationConfirmation(fixture.planningConfirmation), true);
+assert.equal(shouldRequestGenerationConfirmation(fixture.generating), false);
+assert.equal(shouldRequestGenerationConfirmation(fixture.taskCreated), false);
+assert.equal(shouldRequestGenerationConfirmation("完整可直接复制的 prompt\n【时间轴】\n镜头 010\n【连续性硬约束】\n【禁止项】\n目标时长最终状态"), true);
+assert.equal(classifySubmissionEvidence({beforeConversationId: "", after: {conversationId: "123456", scopedGenerating: false, userMessage: true}, request: {videoGenerationRequest: true}}).confirmed, false, "outgoing completion is not proof that a video task exists");
+assert.equal(classifySubmissionEvidence({beforeConversationId: "", after: {conversationId: "123456", scopedGenerating: false, userMessage: true}, request: null}).confirmed, false);
+assert.equal(normalizeComparableText("画面风格和类型: 真人写实, 玻璃门 — 顾言真"), normalizeComparableText("画面风格和类型：真人写实，玻璃门 - 顾言真"), "full-width punctuation and dash variants must compare equally");
+console.log("confirmation detection ok (planning confirmation is not submission evidence)");

@@ -1,0 +1,20 @@
+"use strict";
+const assert = require("node:assert/strict");
+const {spawn} = require("node:child_process");
+const path = require("node:path");
+const child = spawn(process.execPath, [path.resolve(__dirname, "../src/mcp-server.cjs")], {env: {...process.env, DOUBAO_API_URL: "http://127.0.0.1:9"}, stdio: ["pipe", "pipe", "pipe"]});
+const lines = []; child.stdout.setEncoding("utf8"); child.stdout.on("data", chunk => lines.push(...chunk.trim().split("\n").filter(Boolean)));
+const send = message => child.stdin.write(JSON.stringify(message) + "\n");
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+(async () => { try {
+  send({jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-03-26", capabilities: {}, clientInfo: {name: "test", version: "1"}}});
+  send({jsonrpc: "2.0", id: 2, method: "tools/list", params: {}});
+  send({jsonrpc: "2.0", id: 3, method: "ping", params: {}});
+  for (let i = 0; i < 20 && lines.length < 3; i++) await wait(25);
+  assert.equal(lines.length, 3);
+  const init = JSON.parse(lines[0]); const list = JSON.parse(lines[1]); const ping = JSON.parse(lines[2]);
+  assert.equal(init.result.serverInfo.name, "doubao-video-manager");
+  assert.deepEqual(ping.result, {});
+  assert.deepEqual(list.result.tools.map(item => item.name), ["doubao_health", "doubao_list_accounts", "doubao_generate_video", "doubao_get_job", "doubao_wait_job", "doubao_resume_job", "doubao_refresh_url"]);
+  console.log("MCP initialize, tools/list and ping passed");
+} finally { child.kill(); } })().catch(error => { console.error(error); child.kill(); process.exitCode = 1; });

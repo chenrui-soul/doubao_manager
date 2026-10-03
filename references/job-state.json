@@ -1,0 +1,4 @@
+{
+  "job": {"id": "req-test", "state": "failed", "account_id": "account-002", "result": {"state": "completed", "watermarkedUrl": "https://example.com/video.mp4"}},
+  "expectedPublicState": "failed"
+}

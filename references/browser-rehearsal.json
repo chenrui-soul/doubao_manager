@@ -1,0 +1,9 @@
+{
+  "requests": [
+    {"method": "GET", "url": "https://www.doubao.com/image.png", "strict": true, "blocked": false},
+    {"method": "POST", "url": "https://www.doubao.com/chat/completion", "strict": false, "blocked": true},
+    {"method": "POST", "url": "https://www.doubao.com/settings", "strict": false, "blocked": false},
+    {"method": "POST", "url": "https://www.doubao.com/future-endpoint", "strict": true, "blocked": true}
+  ],
+  "payload": {"prompt": "页面预演，不发送", "doubaoModel": "Seedance 2.0 Mini", "ratio": "16:9", "duration": 4}
+}

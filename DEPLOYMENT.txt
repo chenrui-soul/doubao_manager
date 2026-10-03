@@ -1,0 +1,17 @@
+豆包视频管理器 v0.2.0 部署说明
+
+1. 支持 Windows 10/11 或带桌面的 Windows Server x64。
+2. 解压完整目录后运行“豆包视频管理器.exe”，不要只单独复制 EXE。
+3. 程序已自带运行环境，不需要安装 Node.js。
+4. 首次运行后在左侧新增豆包账号，并逐个完成可视化登录。
+5. 登录和任务数据保存在：
+   C:\Users\当前用户\AppData\Local\DoubaoVideoManager
+6. API 默认地址：http://127.0.0.1:8787
+7. 健康检查：GET http://127.0.0.1:8787/health
+8. 生成接口：POST http://127.0.0.1:8787/api/v1/video/generate
+9. 查询接口：GET http://127.0.0.1:8787/api/v1/video/jobs/{requestId}
+
+注意：
+- 程序依赖桌面浏览器自动化，运行期间 Windows 用户必须保持登录状态。
+- 不要直接把 8787 端口暴露到公网；当前接口只监听本机地址。
+- 多张网络图片在 Postman form-data 中重复添加 files 字段，类型选择 Text。

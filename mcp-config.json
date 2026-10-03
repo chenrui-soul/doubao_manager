@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "doubao-video-manager": {
+      "command": "C:\\nvm4w\\nodejs\\node.exe",
+      "args": [
+        "D:/04 AI项目合集/豆包工具/src/mcp-server.cjs"
+      ]
+    }
+  }
+}

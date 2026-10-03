@@ -1,0 +1,7 @@
+{
+  "maxQueue": 2,
+  "submittedCount": 3,
+  "expectedAccepted": 2,
+  "expectedRejectedStatus": 429,
+  "expectedRejectedCode": "DOUBAO_QUEUE_FULL"
+}

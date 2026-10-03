@@ -1,0 +1,79 @@
+{
+  "name": "doubao-video-service",
+  "version": "0.3.5",
+  "private": true,
+  "description": "灵帧豆包视频自动化服务（精简版）",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start": "npm run desktop",
+    "service": "node src/server.cjs",
+    "mcp": "node src/mcp-server.cjs",
+    "setup:mcp": "node scripts/setup-mcp.cjs",
+    "desktop": "node scripts/start-desktop.cjs",
+    "login": "node src/login.cjs",
+    "migrate:profiles": "node scripts/migrate-profiles.cjs",
+    "test": "node test/smoke.cjs",
+    "test:concurrency": "node scripts/test-concurrency.cjs",
+    "test:concurrency:quota": "node scripts/test-quota-concurrent-lifecycle.cjs",
+    "test:browser:rehearsal": "node scripts/test-browser-rehearsal-live.cjs",
+    "test:license": "node scripts/test-online-license.cjs && node scripts/test-online-license-api.cjs",
+    "test:confirmation": "node scripts/test-confirmation-detection.cjs",
+    "test:composer": "node scripts/test-composer-ready.cjs",
+    "test:api-lifecycle": "node scripts/test-api-lifecycle.cjs",
+    "test:network-images": "node scripts/test-network-images.cjs",
+    "test:remote-connector": "node scripts/test-remote-connector.cjs",
+    "test:failure-handling": "node scripts/test-failure-handling.cjs",
+    "test:form-data-live": "node scripts/test-form-data-live.cjs",
+    "test:cache-cleanup": "node scripts/test-cache-cleanup.cjs",
+    "test:timeout-recovery": "node scripts/test-timeout-recovery.cjs",
+    "test:account-targeting": "node scripts/test-account-targeting.cjs",
+    "test:video-mode-reassertion": "node scripts/test-video-mode-reassertion.cjs",
+    "test:generation-sequence": "node scripts/test-generation-sequence.cjs",
+    "dist:win": "node scripts/build-desktop.cjs"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "build": {
+    "appId": "com.lingzhen.doubao.video.service",
+    "productName": "豆包视频管理器",
+    "electronVersion": "31.0.0",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "desktop/**/*",
+      "src/**/*",
+      "config/**/*",
+      "assets/doubao-manager.ico",
+      "assets/doubao-manager.png",
+      "assets/doubao-manager.svg",
+      "package.json",
+      "README.md"
+    ],
+    "extraResources": [
+      {
+        "from": "src/mcp-server.cjs",
+        "to": "mcp-server.cjs"
+      }
+    ],
+    "win": {
+      "icon": "assets/doubao-manager.ico",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "豆包视频工作台-${version}-密钥验证版.exe"
+    }
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

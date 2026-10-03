@@ -1,0 +1,6 @@
+{
+  "jobId": "req_cache_fixture",
+  "maxAgeMs": 3600000,
+  "logMaxBytes": 2097152,
+  "logKeepBytes": 524288
+}

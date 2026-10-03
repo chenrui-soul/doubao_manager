@@ -1,0 +1,12 @@
+{
+  "valid": [
+    {"ok": true, "state": "completed", "watermarkedUrl": "https://example.com/video.mp4"},
+    {"ok": true, "state": "completed", "watermarkFreeUrl": "https://example.com/video.mp4"},
+    {"ok": true, "state": "completed", "resultUrls": ["mock://video/test"]}
+  ],
+  "invalid": [
+    {"ok": true, "state": "completed"},
+    {"ok": true, "state": "generating", "watermarkedUrl": "https://example.com/video.mp4"},
+    {"ok": false, "state": "completed", "watermarkedUrl": "https://example.com/video.mp4"}
+  ]
+}

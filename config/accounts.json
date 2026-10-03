@@ -1,0 +1,16 @@
+{
+  "accounts": [
+    {
+      "id": "account-001",
+      "name": "豆包账号 001",
+      "platform": "豆包",
+      "loginState": "logged_in"
+    },
+    {
+      "id": "account-002",
+      "name": "豆包账号 002",
+      "platform": "豆包",
+      "loginState": "unknown"
+    }
+  ]
+}

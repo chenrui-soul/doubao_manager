@@ -1,0 +1,30 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path");
+const {TaskStore}=require("../src/task-store.cjs"),{TaskActions,contextOf,canConfirm}=require("../src/task-actions.cjs");
+const root=fs.mkdtempSync(path.join(os.tmpdir(),"doubao-B-actions-")),store=new TaskStore(path.join(root,"jobs.json"));
+const accounts=[{id:"original",loginState:"logged_in"},{id:"other",loginState:"logged_in"}];
+const scheduler={busy:new Set(),release:a=>scheduler.busy.delete(a.id)},running=new Map(),waiting=new Set(),scheduled=[],calls=[];
+let inspection={conversationMatches:true,matched:true,planningConfirmation:true,confirmationDelivered:false};
+const worker={openTask:async j=>{calls.push(["open",j.account.id,j.taskContext.conversationId]);return {readOnly:true};},takeoverTask:async j=>calls.push(["takeover",j.id]),freezeTakeover:async j=>calls.push(["freeze",j.id]),inspectTask:async j=>{calls.push(["inspect",j.id]);return inspection;}};
+const opts={store,scheduler,worker,accounts:()=>accounts,running,waiting,scheduleJob:j=>{scheduled.push(j);waiting.add(j.id);},canRecover:()=>true};
+const actions=new TaskActions(opts);
+function make(id="job",extra={}){const j=store.create(id,{prompt:"test",conversationId:"123456789",userMessageId:"msg",allowPaidQuota:false});return store.save({...j,state:"submission_unknown",account_id:"original",...extra});}
+(async()=>{
+ const job=make();
+ await actions.run(job.id,"open-session");assert.deepEqual(calls[0],["open","original","123456789"]);assert.equal(scheduled.length,0);
+ scheduler.busy.add("original");await assert.rejects(()=>actions.run(job.id,"takeover"),/自动操作/);await actions.run(job.id,"open-session");scheduler.busy.clear();
+ make("missing",{payload:{prompt:"no binding"}});await assert.rejects(()=>actions.run("missing","open-session"),/尚未关联/);
+ make("conflict",{result:{conversationId:"987654321"}});assert.equal(contextOf(store.get("conflict")).valid,false);
+ await actions.run(job.id,"takeover");assert.equal(actions.accountHeld("original"),true);assert.equal(scheduler.busy.has("original"),true);
+ await assert.rejects(()=>actions.run(job.id,"recheck"),/结束/);assert.throws(()=>actions.assertNotManual(job),/人工接管/);
+ const restarted=new TaskActions(opts);assert.equal(restarted.accountHeld("original"),true);
+ await actions.run(job.id,"end-takeover");assert.equal(scheduler.busy.has("original"),false);assert.equal(store.get(job.id).manualControl.active,false);assert.equal(scheduled.length,0);
+ assert.ok(calls.findIndex(x=>x[0]==="freeze")<calls.findIndex(x=>x[0]==="inspect"));
+ assert.equal(canConfirm(store.get(job.id)),true);
+ const first=actions.run(job.id,"continue-confirmation"),duplicate=actions.run(job.id,"continue-confirmation");await first;await assert.rejects(()=>duplicate,/重复|自动操作|确认/);
+ assert.equal(scheduled.length,1);assert.equal(scheduled[0].payload.confirmPending,true);assert.equal(scheduled[0].payload.resumeExisting,true);assert.equal(scheduled[0].payload.allowPaidQuota,false);
+ waiting.clear();store.save({...store.get(job.id),state:"submission_unknown"});assert.equal(canConfirm(store.get(job.id)),false);await assert.rejects(()=>actions.run(job.id,"continue-confirmation"));
+ make("paid");inspection={conversationMatches:true,matched:true,paidQuotaConfirmation:true};await actions.run("paid","recheck");assert.equal(store.get("paid").state,"failed");assert.equal(store.get("paid").error.quotaExhausted,true);assert.equal(scheduled.length,1);
+ make("result");inspection={conversationMatches:true,matched:true,videoTaskCard:true};await actions.run("result","recheck");assert.equal(scheduled.length,2);assert.equal(scheduled[1].id,"result");assert.equal(scheduled[1].payload.confirmPending,false);assert.equal(scheduled[1].payload.preferredAccountId,"original");
+ console.log("Stage B actions: binding, read-only open while busy, manual exclusion/restart, freeze-before-inspect, one confirmation, paid refusal, original result-only recovery passed");
+})().catch(e=>{console.error(e);process.exitCode=1;});

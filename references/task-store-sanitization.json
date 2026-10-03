@@ -1,0 +1,5 @@
+{
+  "requestUrl": "https://www.doubao.com/chat/completion?msToken=secret&a_bogus=secret",
+  "expectedRequestUrl": "https://www.doubao.com/chat/completion",
+  "temporaryPath": "C:\\Temp\\task-image.png"
+}

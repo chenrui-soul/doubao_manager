@@ -1,0 +1,16 @@
+data/
+electron-user-data/
+node_modules/
+*.log
+*.db
+dist*/
+tools-license-private.pem
+license.json
+.idea/
+.ai-memory/
+scripts/log/
+scripts/release/
+assets/202*/
+assets/browser-rehearsal/
+assets/build-verification/
+assets/task-monitor/

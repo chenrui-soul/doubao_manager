@@ -1,0 +1,25 @@
+{
+  "promptOnlyReply": {
+    "message": "AI 视频生成提示词（9:16，10 秒，Seedance 2.5 Fast）需要我帮你把提示词再精简成一键复制版本吗？",
+    "expectedCode": "DOUBAO_VIDEO_NOT_CREATED",
+    "expectedRetryMode": "switch_account"
+  },
+  "generationInstructionReply": {
+    "message": "Seedance 2.5 视频生成指令 画幅：9:16，时长 10 秒 模型：Seedance 2.5 Fast 分镜时间轴（10s 完整） 约束规则：保持场景连续",
+    "expectedConfirmation": true,
+    "expectedPrompt": "参数已确认，请立即创建视频任务并开始生成，不要继续输出提示词、分镜或参数说明。"
+  },
+  "monitorTimeout": {
+    "message": "等待当前任务视频资源超时",
+    "expectedCode": "DOUBAO_VIDEO_RESULT_TIMEOUT",
+    "expectedCategory": "result_wait",
+    "conversationId": "conv-123456"
+  },
+  "structuredError": {
+    "code": "DOUBAO_COMPOSER_NOT_READY",
+    "message": "豆包新对话页面未加载完成",
+    "category": "page_loading",
+    "retryMode": "retry_later",
+    "safeToRetry": true
+  }
+}

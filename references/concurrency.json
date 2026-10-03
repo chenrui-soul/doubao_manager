@@ -1,0 +1,8 @@
+{
+  "accountCount": 2,
+  "taskCount": 50,
+  "testDelayMs": 120,
+  "maxQueue": 100,
+  "expectedMaxActive": 2,
+  "expectedState": "completed"
+}

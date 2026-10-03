@@ -1,0 +1,10 @@
+{
+  "accountIds": [
+    "account-a",
+    "account-b",
+    "account-c",
+    "account-d"
+  ],
+  "switches": 12,
+  "maxManualPages": 1
+}

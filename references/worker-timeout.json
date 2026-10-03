@@ -1,0 +1,4 @@
+{
+  "timeoutMs": 1000,
+  "expectedCode": "DOUBAO_WORKER_TIMEOUT"
+}

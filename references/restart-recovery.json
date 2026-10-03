@@ -1,0 +1,7 @@
+{
+  "activeStates": ["queued", "submitting", "generating", "downloading"],
+  "preservedStates": ["awaiting_login", "awaiting_verification", "submission_unknown", "completed", "failed"],
+  "expectedQueuedState": "queued",
+  "expectedUnknownState": "submission_unknown",
+  "expectedErrorCode": "DOUBAO_SUBMISSION_UNKNOWN"
+}

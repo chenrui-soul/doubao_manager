@@ -1,0 +1,8 @@
+{
+  "case": "打开账号后只显示当前账号内嵌页面",
+  "accounts": ["account-001", "account-002"],
+  "expected": {
+    "account-001": {"visible": false},
+    "account-002": {"visible": true}
+  }
+}

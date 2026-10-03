@@ -1,0 +1,7 @@
+{
+  "historyCount": 500,
+  "payloadBytes": 3500,
+  "reads": 100,
+  "slowImage": "https://slow-assets.example/image.png",
+  "requestTimeoutMs": 2000
+}

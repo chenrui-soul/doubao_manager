@@ -1,0 +1,11 @@
+{
+  "accepted": {
+    "requestId": "req-feedback-test",
+    "state": "queued",
+    "source": "desktop",
+    "ratio": "16:9",
+    "duration": 4
+  },
+  "prompt": "feedback test",
+  "error": "test quota exhausted"
+}

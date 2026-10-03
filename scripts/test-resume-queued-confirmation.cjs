@@ -1,0 +1,21 @@
+"use strict";
+const assert = require("node:assert/strict");
+const {BrowserController} = require("../src/vendor/browser-controller.cjs");
+(async () => {
+  const c = Object.create(BrowserController.prototype), session = {};
+  c.open = async () => session;
+  c.connect = async () => ({});
+  c.detect = async () => ({loggedIn:true});
+  c.readSubmissionState = async () => ({conversationId:"123456789",conversationMatches:true,userMessage:true,userMessageId:"original",planningConfirmation:true});
+  c.readConversationTurn = async () => ({known:true,queued:true,delivered:false,conversationId:"123456789"});
+  c.fillComposer = c.clickComposerSend = async () => { throw new Error("resume must never send anything"); };
+  const command = {action:"resume_monitor",account:{id:"fixture"},payload:{prompt:"fixture",conversationId:"123456789"}};
+  await assert.rejects(c.runGeneration(command),error => error.code==="DOUBAO_CONFIRMATION_QUEUED"&&error.submissionUnknown&&error.safeToRetry===false);
+  assert.equal(session.phase,"submission_unknown","resuming a queued confirmation is not generating");
+  c.readConversationTurn = async () => ({known:true,queued:false,delivered:false,conversationId:"123456789"});
+  await assert.rejects(c.runGeneration(command),error => error.code==="DOUBAO_VIDEO_TASK_NOT_CREATED"&&error.submissionUnknown);
+  c.readSubmissionState = async () => ({conversationId:"123456789",conversationMatches:true,userMessage:true,videoTaskCard:true,scopedGenerating:true});
+  const result = await c.runGeneration(command);
+  assert.equal(result.generating,true,"real video task continues monitoring without resubmission");
+  console.log("Resume confirmation passed: queued confirmation stays unknown; a real task resumes without sending");
+})().catch(error=>{console.error(error);process.exitCode=1;});

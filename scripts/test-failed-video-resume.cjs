@@ -1,0 +1,26 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path");
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),"doubao-resume-regression-"));
+process.env.DOUBAO_DATA_ROOT=dir;
+process.env.DOUBAO_ACCOUNTS_FILE=path.join(dir,"accounts.json");
+fs.writeFileSync(process.env.DOUBAO_ACCOUNTS_FILE,JSON.stringify({accounts:[{id:"account-001",loginState:"logged_in"}]}));
+const license=require("../src/license.cjs");
+license.checkLicense=license.requireLicense=async()=>({valid:true});
+const calls=[];
+globalThis.__doubaoInProcessWorker={setProgressHandler(){},detect:async()=>({loggedIn:true}),generate:async job=>{calls.push(job.payload);return{ok:true,state:"completed",conversationId:job.payload.conversationId,watermarkedUrl:"mock://result"};},close(){}};
+const service=require("../src/server.cjs");
+const {TaskStore}=require("../src/task-store.cjs");
+const store=new TaskStore(path.join(dir,"jobs.json"));
+(async()=>{
+  const job=store.create("regression-old-failure",{prompt:"original prompt",conversationId:"123456789",submittedEvidence:{conversationId:"123456789"}});
+  store.save({...job,state:"failed",account_id:"account-001",error:{code:"DOUBAO_VIDEO_TASK_NOT_CREATED"}});
+  await service.resumeJob(job.id);
+  const deadline=Date.now()+3000;
+  while(store.get(job.id).state!=="completed"&&Date.now()<deadline)await new Promise(r=>setTimeout(r,20));
+  assert.equal(store.get(job.id).state,"completed");
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].resumeExisting,true);
+  assert.equal(calls[0].conversationId,"123456789");
+  assert.equal(calls[0].accountLockRequired,true);
+  console.log("old misclassified failure resumes the exact conversation with no fresh generation");
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>service.server.close());

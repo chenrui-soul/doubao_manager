@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>豆包视频工作台</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./workspace.css" />
+</head>
+<body>
+  <section id="startupScreen" class="startup-screen" aria-labelledby="startupTitle">
+    <div class="startup-content">
+      <div class="startup-mark" aria-hidden="true">豆</div>
+      <h1 id="startupTitle">正在启动豆包视频工具</h1>
+      <p id="startupMessage" role="status" aria-live="polite">正在连接本地服务，请稍候…</p>
+      <button id="retryStartup" class="button" type="button" hidden>重试连接</button>
+    </div>
+  </section>
+  <div class="app-shell" hidden inert>
+    <aside class="account-sidebar">
+      <div class="sidebar-title"><div><h1>账号中心</h1><p>独立登录环境 · 按原账号执行</p></div><button id="addAccount" class="icon-button" title="新增账号">＋</button></div>
+      <div class="sidebar-actions"><button id="batchLogin" class="button subtle">批量登录</button><button id="batchCheck" class="button subtle">批量检测</button></div>
+      <div class="filter-row"><select id="accountFilter"><option value="all">全部账号</option><option value="available">可调度账号</option><option value="quota">额度受限</option><option value="check">待检查</option></select><button id="manageGroup" class="button subtle">管理分组</button></div>
+      <input id="accountSearch" class="search-input" placeholder="⌕ 搜索账号" />
+      <div id="accounts" class="accounts-list"><div class="empty">正在读取账号…</div></div>
+      <button id="addAccountCard" class="add-account-card"><span>＋</span><strong>添加豆包账号</strong><small>创建独立浏览器环境</small></button>
+      <div class="sidebar-bottom"><button id="openLicense" class="button">授权管理</button><div id="licenseSummary" class="license-summary" aria-live="polite">正在检查授权…</div></div>
+    </aside>
+    <section class="main-stage">
+      <header class="stagebar"><div class="stage-title"><strong>豆包视频工作台</strong><span id="serviceStatus">服务启动中</span><span class="status-dot"></span></div><div class="stage-actions"><button id="openRemoteConnector" class="button subtle">连接服务</button><button id="hideWindow" class="button subtle">返回工作台</button><button id="openApi" class="button subtle">接口说明</button><button id="openData" class="button subtle">数据目录</button></div></header>
+      <p id="windowMeta" class="workspace-notice" role="status" aria-live="polite">从最近任务查看原会话或处理异常。</p>
+      <div class="workspace-scroll">
+        <section class="overview-section" aria-labelledby="dashboardTitle">
+          <div class="dashboard-head"><div><h2 id="dashboardTitle">运行概览</h2><p>跟踪生成进度，处理需要关注的任务。</p></div><button id="refreshDashboard" class="button subtle" type="button">刷新</button></div>
+          <div class="overview-grid">
+            <button class="stat-card" data-filter="queued"><span>排队中</span><strong id="overviewQueued">0</strong><small>等待调度</small></button>
+            <button class="stat-card" data-filter="running"><span>执行中</span><strong id="overviewBusy">0</strong><small>后台自动处理</small></button>
+            <button class="stat-card overview-warning" data-filter="attention"><span>待处理</span><strong id="overviewAttention">0</strong><small>需要查看或核对</small></button>
+            <button class="stat-card overview-success" data-filter="today"><span>今日完成</span><strong id="overviewCompleted">0</strong><small>已取得视频结果</small></button>
+          </div>
+        </section>
+        <section class="dashboard-card quota-dashboard-card" aria-labelledby="quotaTitle">
+          <div class="dashboard-card-head"><div><strong id="quotaTitle">额度状态</strong><p id="quotaSummary">正在读取账号状态</p></div><span id="quotaBadge" class="dashboard-badge">等待检测</span></div>
+          <div class="quota-status-actions"><button data-account-filter="available"><strong id="quotaAvailable">0</strong> 可调度账号</button><button data-account-filter="quota"><strong id="quotaLimited">0</strong> 额度受限</button><button data-account-filter="check"><strong id="quotaCheck">0</strong> 待检查</button></div>
+          <small id="quotaNote">实际剩余额度以豆包为准，本地估算仅供参考。</small>
+        </section>
+        <section class="recent-section" aria-labelledby="recentTitle">
+          <div class="dashboard-head"><div><h2 id="recentTitle">最近任务 <small id="taskCount"></small></h2><p>点击任务标题只读查看原会话；在详情中处理异常。</p></div><button id="refreshTasks" class="button subtle">刷新任务</button></div>
+          <div class="task-toolbar"><div class="task-filters" role="group" aria-label="任务状态筛选"><button data-filter="all" aria-pressed="true">全部</button><button data-filter="active" aria-pressed="false">进行中</button><button data-filter="attention" aria-pressed="false">待处理</button><button data-filter="completed" aria-pressed="false">已完成</button><button data-filter="failed" aria-pressed="false">失败</button></div><input id="taskSearch" class="search-input" type="search" aria-label="搜索任务" placeholder="搜索任务编号或摘要" /></div>
+          <div id="tasks" class="tasks-list"><div class="empty">正在读取任务…</div></div>
+        </section>
+      </div>
+    </section>
+  </div>
+  <dialog id="taskDetailDialog" aria-labelledby="taskDetailTitle">
+    <header class="detail-header"><div><span class="api-docs-kicker">任务详情</span><h2 id="taskDetailTitle">正在读取任务</h2><p id="detailRequestId"></p></div><button id="closeTaskDetail" class="icon-button" type="button" aria-label="关闭任务详情">×</button></header>
+    <div id="taskDetailBody" class="detail-body"></div>
+    <div id="taskDetailActions" class="detail-actions"></div>
+    <p id="detailFeedback" class="detail-feedback" role="status" aria-live="polite"></p>
+  </dialog>
+  <dialog id="licenseDialog" aria-labelledby="licenseTitle">
+    <form id="licenseForm">
+      <h2 id="licenseTitle">激活豆包视频工具</h2>
+      <p>输入管理员提供的设备密钥，联网验证后即可使用。</p>
+      <label for="deviceCode">本机设备码</label>
+      <div class="license-device"><input id="deviceCode" readonly aria-readonly="true" tabindex="-1" spellcheck="false" autocomplete="off" /><button id="copyDevice" class="button" type="button">复制</button></div>
+      <div id="storedLicense" hidden>
+        <label for="storedLicenseSecret">当前密钥</label>
+        <div class="license-device"><input id="storedLicenseSecret" type="password" readonly autocomplete="off" aria-label="当前密钥，默认隐藏" /><button id="revealLicense" class="button" type="button">查看</button></div>
+      </div>
+      <label for="licenseSecret">激活 / 更换密钥</label>
+      <input id="licenseSecret" type="password" autocomplete="off" placeholder="粘贴设备密钥" maxlength="4096" />
+      <p id="licenseMessage" role="status" aria-live="polite">正在检查授权…</p>
+      <p id="licenseExpiry"></p>
+      <div class="license-actions"><button id="activateLicense" class="login-btn" type="submit">激活 / 更换密钥</button><button id="retryLicense" class="button" type="button">重新验证</button><button id="closeLicense" class="button" type="button" hidden>返回工作台</button></div>
+    </form>
+  </dialog>
+  <dialog id="remoteConnectorDialog" aria-labelledby="remoteConnectorTitle">
+    <form id="remoteConnectorForm" class="remote-connector-shell">
+      <header class="remote-connector-head"><div><span class="api-docs-kicker">REMOTE CONNECTION</span><h2 id="remoteConnectorTitle">连接服务</h2><p>输入网站提供的连接凭证，管理器会自动保持连接。</p></div><button id="closeRemoteConnector" class="icon-button" type="button" aria-label="关闭连接服务">×</button></header>
+      <div class="remote-connector-body">
+        <label for="remoteServer">网站地址</label>
+        <input id="remoteServer" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com 或 http://192.168.x.x:端口" required />
+        <label for="remoteToken">连接凭证</label>
+        <div class="remote-token-field"><input id="remoteToken" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴连接凭证" required /><button id="toggleRemoteToken" class="button" type="button">显示</button></div>
+        <p class="remote-connector-note">公网地址必须使用 HTTPS；HTTP 仅支持局域网地址。凭证只保存在本机管理器配置中，保存后会自动连接。</p>
+        <p id="remoteConnectorStatus" class="remote-connector-status" role="status" aria-live="polite"></p>
+      </div>
+      <footer class="remote-connector-foot"><button id="saveRemoteConnector" class="login-btn" type="submit">保存并连接</button><button id="cancelRemoteConnector" class="button" type="button">取消</button></footer>
+    </form>
+  </dialog>
+  <dialog id="apiDocsDialog" aria-labelledby="apiDocsTitle">
+    <form method="dialog" class="api-docs-shell">
+      <header class="api-docs-head">
+        <div>
+          <span class="api-docs-kicker">HTTP API · v1</span>
+          <h2 id="apiDocsTitle">豆包视频工具接口说明</h2>
+          <p>通过 HTTP 接口提交视频任务、查询进度，并管理账号和服务状态。</p>
+        </div>
+        <button id="closeApiDocs" class="icon-button api-docs-close" type="submit" aria-label="关闭接口说明">×</button>
+      </header>
+      <div class="api-tabs" role="tablist" aria-label="接口说明页签"><button id="apiGuideTab" type="button" role="tab" aria-controls="apiGuidePanel" aria-selected="true">接入说明</button><button id="apiRecordsTab" type="button" role="tab" aria-controls="apiRecordsPanel" aria-selected="false" tabindex="-1">调用记录</button></div>
+      <div id="apiGuidePanel" role="tabpanel" aria-labelledby="apiGuideTab" class="api-docs-body">
+        <section class="api-docs-section api-base-section">
+          <div class="api-section-title"><div><strong>服务地址</strong><small>请求都以这个地址为前缀</small></div><button class="button" type="button" data-copy="http://127.0.0.1:8787">复制地址</button></div>
+          <div class="api-base-grid">
+            <code>本机：<b>http://127.0.0.1:8787</b></code>
+            <code>局域网：<b>http://管理器电脑的IP:8787</b></code>
+          </div>
+          <p class="api-docs-note">网页和管理器在同一台电脑时使用本机地址；从其他电脑访问时使用管理器电脑的局域网地址。请确认管理器已启动并允许 8787 端口通过防火墙。接口当前使用本机授权状态，不需要额外 API Token；浏览器跨域调用请通过同源代理，curl、Postman 或后端调用可直接使用。</p>
+        </section>
+
+        <section class="api-docs-section">
+          <div class="api-section-title"><div><strong>快速开始</strong><small>异步提交，立即拿到 requestId</small></div></div>
+          <ol class="api-steps"><li>调用生成接口，提交 <code>prompt</code> 和视频规格。</li><li>记录响应中的 <code>requestId</code>。</li><li>每 1–2 秒调用任务查询接口，直到状态变为 <code>completed</code> 或 <code>failed</code>。</li><li>完成后读取 <code>watermarkFreeUrl</code> 或 <code>watermarkedUrl</code>。</li></ol>
+          <pre class="api-code"><code>curl -X POST "http://127.0.0.1:8787/api/v1/video/generate" `
+  -H "Content-Type: application/json" `
+  -d '{"prompt":"海边日落，镜头缓慢向前推进","model":"Seedance 2.0 Mini","ratio":"16:9","duration":10}'</code><button class="code-copy" type="button" data-copy="curl -X POST &quot;http://127.0.0.1:8787/api/v1/video/generate&quot; -H &quot;Content-Type: application/json&quot; -d '{&quot;prompt&quot;:&quot;海边日落，镜头缓慢向前推进&quot;,&quot;model&quot;:&quot;Seedance 2.0 Mini&quot;,&quot;ratio&quot;:&quot;16:9&quot;,&quot;duration&quot;:10}'">复制</button></pre>
+        </section>
+
+        <section class="api-docs-section">
+          <div class="api-section-title"><div><strong>生成视频</strong><small><span class="method-badge post">POST</span> /api/v1/video/generate</small></div></div>
+          <p>默认返回 <code>202</code>，任务在后台执行。需要等待结果时可追加 <code>?wait=1</code>；建议生产调用使用默认异步方式，避免长连接占用。</p>
+          <div class="api-table-wrap"><table class="api-table"><thead><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>
+            <tr><td><code>prompt</code></td><td>string</td><td>是</td><td>视频提示词，不能为空。</td></tr>
+            <tr><td><code>model</code></td><td>string</td><td>否</td><td>模型名，默认 <code>Seedance 2.0 Mini</code>；也兼容 <code>doubaoModel</code>。</td></tr>
+            <tr><td><code>ratio</code></td><td>string</td><td>否</td><td><code>自动</code>、<code>3:4</code>、<code>4:3</code>、<code>9:16</code>、<code>16:9</code>、<code>1:1</code>、<code>21:9</code>。</td></tr>
+            <tr><td><code>duration</code></td><td>integer</td><td>否</td><td>4–15 秒，默认 10。</td></tr>
+            <tr><td><code>files</code></td><td>file / string[]</td><td>否</td><td>multipart/form-data 中重复传入的图片文件或 HTTPS 图片地址；按传入顺序作为参考图。</td></tr>
+            <tr><td><code>imageUrls</code></td><td>string[]</td><td>否</td><td>远程参考图，只支持 HTTPS 公网图片地址，单张不超过 20MB。</td></tr>
+            <tr><td><code>preferredAccountId</code></td><td>string</td><td>否</td><td>优先使用的账号 ID。</td></tr>
+            <tr><td><code>accountLockRequired</code></td><td>boolean</td><td>否</td><td>为 true 时必须同时提供账号 ID，失败后不切换账号。</td></tr>
+            <tr><td><code>allowPaidQuota</code></td><td>boolean</td><td>否</td><td>是否允许使用豆包侧付费额度。</td></tr>
+            <tr><td><code>timeoutMs</code></td><td>integer</td><td>否</td><td>任务超时参考值；有参考图时服务会自动使用更长的最小超时。</td></tr>
+            <tr><td><code>resolution</code></td><td>string</td><td>否</td><td>当前豆包页面没有分辨率控件，只接受空值或 <code>自动</code>；画面尺寸由比例和豆包页面决定。</td></tr>
+          </tbody></table></div>
+          <pre class="api-code"><code>{
+  "prompt": "一只橘猫坐在窗边，阳光缓慢移动",
+  "model": "Seedance 2.0 Mini",
+  "ratio": "16:9",
+  "duration": 10,
+  "source": "my-app"
+}</code><button class="code-copy" type="button" data-copy="{\n  &quot;prompt&quot;: &quot;一只橘猫坐在窗边，阳光缓慢移动&quot;,\n  &quot;model&quot;: &quot;Seedance 2.0 Mini&quot;,\n  &quot;ratio&quot;: &quot;16:9&quot;,\n  &quot;duration&quot;: 10,\n  &quot;source&quot;: &quot;my-app&quot;\n}">复制</button></pre>
+          <pre class="api-code"><code>curl -X POST "http://127.0.0.1:8787/api/v1/video/generate" `
+  -F "prompt=一只橘猫坐在窗边" -F "ratio=16:9" -F "duration=10" -F "files=@cover.png"</code><button class="code-copy" type="button" data-copy="curl -X POST &quot;http://127.0.0.1:8787/api/v1/video/generate&quot; -F &quot;prompt=一只橘猫坐在窗边&quot; -F &quot;ratio=16:9&quot; -F &quot;duration=10&quot; -F &quot;files=@cover.png&quot;">复制</button></pre>
+        </section>
+
+        <section class="api-docs-section">
+          <div class="api-section-title"><div><strong>查询任务</strong><small><span class="method-badge get">GET</span> /api/v1/video/jobs/{requestId}</small></div></div>
+          <p>返回任务状态、账号、耗时和结果地址。也可以用 <span class="method-badge get">GET</span> <code>/api/v1/video/jobs</code> 获取最近任务列表。</p>
+          <div class="api-status-grid"><span><b>queued</b>排队中</span><span><b>checking_login</b>检查登录</span><span><b>configuring</b>配置参数</span><span><b>submitting</b>提交中</span><span><b>generating</b>生成中</span><span><b>downloading</b>读取结果</span><span><b>completed</b>已完成</span><span><b>failed</b>失败</span><span><b>submission_unknown</b>待人工核对</span><span><b>recover-result</b>仅补取已有视频</span></div>
+          <pre class="api-code"><code>{
+  "requestId": "req_xxx",
+  "state": "completed",
+  "accountId": "account-1",
+  "ratio": "16:9",
+  "duration": 10,
+  "watermarkFreeUrl": "https://...",
+  "watermarkedUrl": "https://..."
+}</code><button class="code-copy" type="button" data-copy="{\n  &quot;requestId&quot;: &quot;req_xxx&quot;,\n  &quot;state&quot;: &quot;completed&quot;,\n  &quot;accountId&quot;: &quot;account-1&quot;,\n  &quot;ratio&quot;: &quot;16:9&quot;,\n  &quot;duration&quot;: 10,\n  &quot;watermarkFreeUrl&quot;: &quot;https://...&quot;,\n  &quot;watermarkedUrl&quot;: &quot;https://...&quot;\n}">复制</button></pre>
+        </section>
+
+        <section class="api-docs-section api-endpoints-section">
+          <div class="api-section-title"><div><strong>其他公开接口</strong><small>账号、恢复和诊断</small></div></div>
+          <ul class="api-endpoints">
+            <li><code>GET /health</code><span>服务健康、授权、队列和账号概览。</span></li>
+            <li><code>GET /api/v1/accounts</code><span>获取账号、登录、套餐状态和本地额度统计。套餐与实际余额分别判断。</span></li>
+            <li><code>POST /api/v1/accounts</code><span>新增账号，可传 <code>{"name":"名称"}</code>。</span></li>
+            <li><code>PATCH /api/v1/accounts/{accountId}</code><span>修改名称或本地额度统计；确认豆包额度恢复后可传 <code>{"resetQuotaExhaustion":true}</code> 允许再次尝试，不增加真实余额。</span></li>
+            <li><code>DELETE /api/v1/accounts/{accountId}</code><span>删除空闲账号。</span></li>
+            <li><code>POST /api/v1/accounts/{accountId}/login</code><span>打开账号的豆包页面并检测登录。</span></li>
+            <li><code>POST /api/v1/accounts/{accountId}/check-login</code><span>重新检测登录和验证状态。</span></li>
+            <li><code>POST /api/v1/video/jobs/{requestId}/recheck</code><span>只核对原会话，不发送消息。</span></li>
+            <li><code>POST /api/v1/video/jobs/{requestId}/recover-result</code><span>仅补取已经提交的原任务；锁定原账号和原会话，不重新发送提示词。</span></li>
+            <li><code>POST /api/v1/video/jobs/{requestId}/refresh-url</code><span>刷新已完成任务的视频地址。</span></li>
+            <li><code>POST /api/v1/video/jobs/{requestId}/open-session</code><span>使用原账号登录环境，只读查看原会话；不导航后台执行页面。</span></li>
+            <li><code>POST /api/v1/video/jobs/{requestId}/takeover</code><span>账号没有自动操作时交接操作权；接管期间暂停该账号调度。</span></li>
+            <li><code>POST /api/v1/video/jobs/{requestId}/end-takeover</code><span>收回页面输入权并核对原任务；发现已有结果后只补取，不发送消息。</span></li>
+            <li><code>POST /api/v1/video/jobs/{requestId}/continue-confirmation</code><span>仅对有未送达依据的普通确认受理一次操作；执行前重新检查原页面，不允许付费时不确认付费。</span></li>
+            <li><code>POST /api/v1/diagnostics/browser-rehearsal</code><span>页面预演：检查多个账号的页面流程，停止在发送前，不生成视频。</span></li>
+            <li><code>GET /api/v1/license/status</code><span>查询授权状态；暂时停用验证时返回 verificationDisabled: true，允许使用工具，不代表已购买授权。</span></li>
+            <li><code>POST /api/v1/license/activate</code><span>提交设备密钥激活授权；暂时停用验证时不请求授权中心、不修改已有密钥。</span></li>
+          </ul>
+        </section>
+
+        <section class="api-docs-section">
+          <div class="api-section-title"><div><strong>豆包套餐与额度</strong><small>账号接口中的套餐字段来自最近一次检测</small></div></div>
+          <p><code>membershipState</code>：<code>standard_member</code> 标准套餐、<code>enhanced_member</code> 加强套餐、<code>premium_member</code> 高级套餐、<code>no_member</code> 普通账号、<code>unknown</code> 待确认。<code>membershipLabel</code> 为套餐名称，<code>membershipSource</code> 为识别来源，<code>membershipCheckedAt</code> 为检测时间。</p>
+          <p>赠送权益也可能显示套餐标签，不能据此判断是否付费或自动续费。创作额度按免费额度、创作额度包、会员套餐额度依次扣减；会员到期后，未过期的创作额度包余量仍可能可用。套餐级别不能换算成固定视频次数或清晰度，实际权益、余额和恢复时间请查看豆包「订阅与额度管理」。当前接口尚未读取套餐到期日和各类实际余额。</p>
+          <p>“近7天免费额度已用完”“近30天免费额度已用完”也会暂停账号的免费任务调度。<code>quotaWindowDays</code> 为 7 或 30，<code>quotaRequiresRecheck</code> 为 true；<code>disabledUntil</code> 为 null 表示恢复时间未知，不代表账号可用，请同时检查 <code>disabledReason</code>。这两类限制不会在当天零点自动解除。<code>actualFreeQuotaRemaining</code> 为 0，其他付费额度余额仍未知。</p>
+        </section>
+        <section class="api-docs-section api-rules-section">
+          <div class="api-section-title"><div><strong>调度与错误处理</strong><small>调用时请按这些规则处理</small></div></div>
+          <ul class="api-rules"><li>服务自动从已登录且空闲的账号池调度任务；豆包明确返回额度耗尽时，该账号会暂停调度，避免下一次继续命中。</li><li>本地额度统计是辅助信息，最终额度以豆包页面返回为准；不要仅凭本地估算拒绝任务。</li><li>收到 <code>429 DOUBAO_QUEUE_FULL</code> 时请退避重试；收到 <code>409</code> 时通常是页面预演或账号状态冲突。</li><li>收到 <code>submission_unknown</code> 时先人工核对豆包页面，再调用 resume，避免重复生成。</li><li>请求体支持 JSON；带本地图片时使用 multipart/form-data。所有响应均为 UTF-8 JSON。</li></ul>
+        </section>
+      </div>
+      <div id="apiRecordsPanel" role="tabpanel" aria-labelledby="apiRecordsTab" class="api-docs-body" hidden><p id="apiRecordSummary"></p><p class="api-docs-note">与最近任务使用同一份记录；不包含未保存的 HTTP 请求耗时。</p><div id="apiRecords"></div></div>
+      <footer class="api-docs-foot"><span id="apiDocsCopyStatus" role="status" aria-live="polite">接口文档与当前服务版本同步</span><button class="button" type="submit">关闭</button></footer>
+    </form>
+  </dialog>
+  <script src="./renderer.js"></script>
+  <script src="./task-workspace.js"></script>
+  <script src="./remote-connector-ui.js"></script>
+  <script src="./license-ui.js"></script>
+</body>
+</html>
