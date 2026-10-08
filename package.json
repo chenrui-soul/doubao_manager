@@ -29,7 +29,8 @@
     "test:account-targeting": "node scripts/test-account-targeting.cjs",
     "test:video-mode-reassertion": "node scripts/test-video-mode-reassertion.cjs",
     "test:generation-sequence": "node scripts/test-generation-sequence.cjs",
-    "dist:win": "node scripts/build-desktop.cjs"
+    "dist:win": "node scripts/build-desktop.cjs",
+    "dist:installer": "node scripts/build-desktop.cjs --target nsis --out dist-installer"
   },
   "engines": {
     "node": ">=22.5.0"

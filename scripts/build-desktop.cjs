@@ -1,5 +1,5 @@
 "use strict";
-// Clean, repeatable portable build. Never copy runtime data or credentials.
+// Clean, repeatable portable/installer build. Never copy runtime data or credentials.
 const fs = require("node:fs"), path = require("node:path"), os = require("node:os");
 const {createRequire} = require("node:module");
 const {readPolicy, checkPackage} = require("./license-package-check.cjs");
@@ -12,6 +12,8 @@ function option(name, fallback) {
   return args[i + 1];
 }
 async function main() {
+  const target = option("--target", "portable");
+  if (!["portable", "nsis"].includes(target)) throw new Error("--target 仅支持 portable 或 nsis");
   const policyBytes = fs.readFileSync(path.join(root, "config/license-policy.json"));
   const policy = readPolicy(policyBytes);
   const builderPath = option("--builder", process.env.DOUBAO_BUILDER_CLI) || require.resolve("electron-builder");
@@ -38,12 +40,32 @@ async function main() {
   fs.writeFileSync(path.join(stage, "config/accounts.json"), JSON.stringify({accounts: []}) + "\n");
   const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json")));
   if (Object.keys(pkg.dependencies).join() !== "ws") throw new Error("依赖清单已变化，请更新干净构建的依赖复制规则");
-  fs.cpSync(path.join(root, "node_modules/ws"), path.join(stage, "node_modules/ws"), {recursive: true});
+  // Node 24 on Windows can crash inside fs.cpSync while copying this small
+  // dependency tree. Copy files explicitly so clean builds remain reliable.
+  function copyTree(source, target) {
+    fs.mkdirSync(target, {recursive: true});
+    for (const entry of fs.readdirSync(source, {withFileTypes: true})) {
+      const from = path.join(source, entry.name), to = path.join(target, entry.name);
+      if (entry.isDirectory()) copyTree(from, to);
+      else fs.copyFileSync(from, to);
+    }
+  }
+  copyTree(path.join(root, "node_modules/ws"), path.join(stage, "node_modules/ws"));
   pkg.build.directories.output = output;
   pkg.build.npmRebuild = false;
   fs.writeFileSync(path.join(stage, "package.json"), JSON.stringify(pkg, null, 2));
-  const verification = {version: pkg.version, expectedVerificationEnabled: policy.verificationEnabled, stage};
-  await build({projectDir: stage, targets: Platform.WINDOWS.createTarget("portable"), config: {
+  const verification = {version: pkg.version, target, expectedVerificationEnabled: policy.verificationEnabled, stage};
+  await build({projectDir: stage, publish: "never", targets: Platform.WINDOWS.createTarget(target), config: {
+    ...(target === "nsis" ? {nsis: {
+      artifactName: "豆包视频工作台-${version}-安装包.exe",
+      oneClick: false,
+      perMachine: false,
+      allowToChangeInstallationDirectory: true,
+      createDesktopShortcut: true,
+      createStartMenuShortcut: true,
+      shortcutName: "豆包视频工作台",
+      deleteAppDataOnUninstall: false,
+    }} : {}),
     ...(electronDist ? {electronDist:path.resolve(electronDist)} : {}),
     beforePack: () => checkPackage(file => fs.readFileSync(path.join(stage, file)), policy.verificationEnabled),
     afterPack: context => {
